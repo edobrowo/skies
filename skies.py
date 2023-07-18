@@ -1,6 +1,7 @@
 from PIL import Image
 from numpy import empty, uint8, uint32
 from math import pi
+import os
 
 PI = pi
 TPI = 2 * pi
@@ -8,10 +9,8 @@ HPI = pi / 2
 QPI = pi / 4
 EPI = pi / 8
 
-
-# Color - color constants and utility functions
 class Color:
-    # Color integer-list conversion lambdas
+    # Color integer/rgb-list conversion lambdas
     irgb = lambda rgb_int : list(rgb_int.to_bytes(3, byteorder = 'big'))
     rgbi = lambda rgb : uint32((int.from_bytes(rgb)))
 
@@ -29,29 +28,27 @@ class Color:
     LIME = irgb(0xCCEEBC)
     RED = irgb(0xEF6262)
 
-# Canvas - render operations
+
 class Canvas:
-    def __init__(self, width, height):
+    def __init__(self, width, height, bg_color = Color.BLACK):
         self.width = width
         self.height = height
+        self.raster = empty((height, width, 3), dtype=uint8)
 
-        self.array = empty((height, width, 3), dtype=uint8)
+        self.bg_color = bg_color
         self.color = Color.WHITE
         self.stroke_width = 1
-        self.fill_mode = False
+        self.opacity = 1
+        self.fill = False
 
-    def save(self, path):
-        img = Image.fromarray(self.array)
-        img.save(path)
+        self.raster[:,:] = self.bg_color
 
-    def set(self, x, y):
-        self.array[y, x] = self.color
+    # Draw modes
+    def point(self, x, y):
+        self.raster[y, x] = self.color
 
-    def fillbg(self, rgb):
-        self.array[:,:] = rgb
-
-    def rect(self, x, y, w, h):
-        self.array[y:y+h, x:x+w] = self.color
+    def region(self, x0, y0, x1, y1):
+        self.raster[x0:x1, y0:y1] = self.color
 
     def line(self, x0, y0, x1, y1):
         def low(x0, y0, x1, y1):
@@ -64,7 +61,7 @@ class Canvas:
             D = 2 * dy - dx
             y = y0
             for x in range(x0, x1):
-                self.array[y, x] = self.color
+                self.raster[y, x] = self.color
                 if D > 0:
                     y = y + yi
                     D = D + (2 * (dy - dx))
@@ -82,7 +79,7 @@ class Canvas:
             D = 2 * dx - dy
             x = x0
             for y in range(y0, y1):
-                self.array[y, x] = self.color
+                self.raster[y, x] = self.color
                 if D > 0:
                     x = x + xi
                     D = D + (2 * (dx - dy))
@@ -101,9 +98,28 @@ class Canvas:
             else:
                 high(x0, y0, x1, y1) 
 
+    # Convenience
+    def clear(self):
+        self.region(0, self.width - 1, 0, self.height - 1)
+
+    def rect(self, x, y, w, h):
+        self.region(x, y, x + w, y + h)
+
     def polyline(self, pts):
         for pt0, pt1 in zip(pts, pts[1:]):
             self.line(pt0[0], pt0[1], pt1[0], pt1[1])
 
     def polygon(self, pts):
         self.polyline(pts + [pts[0]])
+
+def save(canvas, path):
+    img = Image.fromarray(canvas.raster)
+    img.save(path)
+
+def save_n(canvas, path, n, draw_fun, args):
+    base_path, extension = os.path.splitext(path)
+    for i in range(0, n):
+        canvas.clear()
+        draw_fun(canvas, *args)
+        save_path = base_path + str(i).zfill(4) + extension
+        save(canvas, save_path)
