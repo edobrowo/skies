@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from PIL import Image
 from numpy import empty, uint8, uint32
 from math import pi
@@ -48,7 +50,7 @@ class Canvas:
         self.raster[y, x] = self.color
 
     def region(self, x0, y0, x1, y1):
-        self.raster[x0:x1, y0:y1] = self.color
+        self.raster[y0:y1, x0:x1] = self.color
 
     def line(self, x0, y0, x1, y1):
         def low(x0, y0, x1, y1):

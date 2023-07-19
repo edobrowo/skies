@@ -1,7 +1,6 @@
 import skies
 from random import randint
 from math import floor
-from sys import argv
 
 def random_polygon(canvas, xlow, ylow, xhigh, yhigh, count):
     pts = [[randint(xlow, xhigh), randint(ylow, yhigh)] for _ in range(count)]
@@ -21,4 +20,4 @@ height = 1200
 canvas = skies.Canvas(width, height)
 polygons(canvas, 4, 3, 50)
 
-skies.save_n(canvas, 'polygons/poly.png', 10, polygons, [4, 3, 10])
+skies.save_n(canvas, 'test/test.png', 10, polygons, [4, 3, 10])
